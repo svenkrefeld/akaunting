@@ -301,6 +301,7 @@
                                 </a>
                             @stack('button_pdf_end')
                         </div>
+
                         <div id="confirm" class="col-sm-12">
                             <component v-bind:is="method_show_html" @interface="onRedirectConfirm"></component>
                         </div>

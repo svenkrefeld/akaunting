@@ -27,6 +27,55 @@ class PhpExecutableFinder
         //$this->executableFinder = new ExecutableFinder();
     }
 
+    public function getPhpPath()
+    {
+        if ($this->isCpanel()) {
+            return '/usr/local/bin/php';
+        }
+
+        return 'php';
+    }
+
+    public function isCpanel()
+    {
+        return $this->checkFolderAndPort('/usr/local/cpanel', 2082);
+    }
+
+    public function isPlesk()
+    {
+        return $this->checkFolderAndPort('/usr/local/psa', 8443);
+    }
+
+    public function isVirtualmin()
+    {
+        return $this->checkFolderAndPort('/usr/share/webmin', 10000);
+    }
+
+    public function checkFolderAndPort($folder, $port)
+    {
+        try {
+            return is_dir($folder);
+        } catch (\ErrorException | \Exception | \Throwable $e) {
+            return $this->checkSocket($port);
+        }
+    }
+
+    public function checkSocket($port)
+    {
+        try {
+            $ip = @gethostbyname('localhost');
+            $link = @fsockopen($ip, $port, $errno, $error);
+
+            if ($link) {
+                return true;
+            }
+
+            return false;
+        } catch (\ErrorException | \Exception | \Throwable $e) {
+            return false;
+        }
+    }
+
     /**
      * Finds The PHP executable.
      *
@@ -36,7 +85,7 @@ class PhpExecutableFinder
     {
         # @override
         // Not working on shared hosting due to "open_basedir" restriction applied by cPanel/Plesk
-        return 'php';
+        return $this->getPhpPath();
 
         if ($php = getenv('PHP_BINARY')) {
             if (!is_executable($php)) {

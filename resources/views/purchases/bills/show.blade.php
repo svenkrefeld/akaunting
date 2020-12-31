@@ -4,7 +4,7 @@
 
 @section('content')
     @stack('recurring_message_start')
-        @if (($recurring = $bill->recurring) && ($next = $recurring->next()))
+        @if (($recurring = $bill->recurring) && ($next = $recurring->getNextRecurring()))
             <div class="row mb-3">
                 <div class="col-sm-12">
                     <div class="media">
@@ -58,6 +58,7 @@
                                     <span class="timeline-step badge-primary">
                                         <i class="fas fa-plus"></i>
                                     </span>
+
                                     <div class="timeline-content">
                                         @stack('timeline_body_create_bill_head_start')
                                             <h2 class="font-weight-500">{{ trans('bills.create_bill') }}</h2>
@@ -86,6 +87,7 @@
                                     <span class="timeline-step badge-danger">
                                         <i class="far fa-envelope"></i>
                                     </span>
+
                                     <div class="timeline-content">
                                         @stack('timeline_body_receive_bill_head_start')
                                             <h2 class="font-weight-500">{{ trans('bills.receive_bill') }}</h2>
@@ -460,6 +462,7 @@
                             @stack('button_group_start')
                             <div class="dropup header-drop-top">
                                 <button type="button" class="btn btn-primary header-button-top" data-toggle="dropdown" aria-expanded="false"><i class="fa fa-chevron-up"></i>&nbsp; {{ trans('general.more_actions') }}</button>
+
                                 <div class="dropdown-menu" role="menu">
                                     @stack('button_dropdown_start')
                                     @if ($bill->status != 'cancelled')

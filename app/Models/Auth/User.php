@@ -115,7 +115,7 @@ class User extends Authenticatable
             }
         }
 
-        if (!empty($value) && !$this->hasMedia('picture')) {
+        if (!empty($value)) {
             return $value;
         } elseif (!$this->hasMedia('picture')) {
             return false;
@@ -127,7 +127,7 @@ class User extends Authenticatable
     /**
      * Always return a valid picture when we retrieve it
      */
-    public function getLastLoggedInAtAttribute($value)
+    public function getLastLoggedAttribute($value)
     {
         // Date::setLocale('tr');
 

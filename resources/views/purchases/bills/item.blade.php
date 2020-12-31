@@ -87,7 +87,7 @@
         <td class="border-right-0 border-bottom-0 pb-0"
             :class="[{'has-error': form.errors.has('items.' + index + '.price') }]">
             @stack('price_input_start')
-                {{ Form::moneyGroup('name', '', '', ['required' => 'required', 'v-model' => 'row.price', 'v-error' => 'form.errors.get(\'items.\' + index + \'.price\')', 'v-error-message' => 'form.errors.get(\'items.\' + index + \'.price\')' , 'data-item' => 'price', 'currency' => $currency, 'dynamic-currency' => 'currency', 'change' => 'row.price = $event; form.errors.clear(\'items.\' + index + \'.price\'); onCalculateTotal'], 0.00, 'text-right input-price') }}
+                {{ Form::moneyGroup('price', '', '', ['required' => 'required', 'v-model' => 'row.price', 'v-error' => 'form.errors.get(\'items.\' + index + \'.price\')', 'v-error-message' => 'form.errors.get(\'items.\' + index + \'.price\')' , 'data-item' => 'price', 'currency' => $currency, 'dynamic-currency' => 'currency', 'change' => 'row.price = $event; form.errors.clear(\'items.\' + index + \'.price\'); onCalculateTotal'], 0.00, 'text-right input-price') }}
 
                 <input :name="'items.' + index + '.currency'"
                     data-item="currency"
@@ -105,10 +105,11 @@
             @stack('discount_input_start')
             <div class="input-group input-group-merge">
                 <div class="input-group-prepend">
-                        <span class="input-group-text" id="input-discount">
-                            <i class="fa fa-percent"></i>
-                        </span>
+                    <span class="input-group-text" id="input-discount">
+                        <i class="fa fa-percent"></i>
+                    </span>
                 </div>
+
                 <input type="number"
                     max="100"
                     min="0"

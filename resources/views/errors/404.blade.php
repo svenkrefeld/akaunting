@@ -7,6 +7,7 @@
         <div class="card-header">
             <h2 class="mb-0 text-warning"><i class="fa fa-exclamation-triangle text-warning"></i>&nbsp;&nbsp;{{ trans('errors.header.404') }}</h2>
         </div>
+
         <div class="card-body">
             <p>{{ trans('errors.message.404') }}</p>
 

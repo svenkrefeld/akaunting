@@ -7,6 +7,7 @@
         <div class="card-header">
             <h2 class="mb-0 text-danger"><i class="fa fa-exclamation-triangle text-danger"></i>&nbsp;&nbsp;{{ trans('errors.header.500') }}</h2>
         </div>
+
         <div class="card-body">
             <p>{{ trans('errors.message.500') }}</p>
 

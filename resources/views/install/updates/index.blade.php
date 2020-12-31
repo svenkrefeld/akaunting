@@ -22,11 +22,12 @@
                     <div class="col-sm-2 col-md-6 long-texts">
                         {{ trans('updates.new_core') }}
                     </div>
+
                     <div class="col-sm-10 col-md-6 text-right">
-                        <a href="{{ route('updates.run', ['alias' => 'core', 'version' => $core]) }}"
-                            class="btn btn-info btn-sm header-button-top long-texts">
+                        <a href="{{ route('updates.run', ['alias' => 'core', 'version' => $core]) }}" class="btn btn-info btn-sm header-button-top long-texts">
                             <i class="fa fa-refresh"></i> &nbsp;{{ trans('updates.update', ['version' => $core]) }}
                         </a>
+
                         <button type="button" @click="onChangelog" class="btn btn-white btn-sm header-button-bottom">
                             <i class="fa fa-exchange-alt"></i> &nbsp;{{ trans('updates.changelog') }}
                         </button>
@@ -51,6 +52,7 @@
                         <th class="col-xs-4 col-sm-2 col-md-2 text-center">{{ trans('general.actions') }}</th>
                     </tr>
                 </thead>
+
                 <tbody>
                     @if ($modules)
                         @foreach($modules as $module)

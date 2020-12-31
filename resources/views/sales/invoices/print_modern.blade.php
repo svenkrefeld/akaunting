@@ -7,6 +7,8 @@
         <div class="col-58">
             <div class="text company pl-2 mb-1 d-flex align-items-center">
                 <img src="{{ $logo }}" alt="{{ setting('company.name') }}"/>
+
+                <strong class="pl-2 text-white">{{ setting('company.name') }}</strong>
             </div>
         </div>
 
@@ -14,17 +16,17 @@
             <div class="text company">
                 <strong class="text-white">{!! nl2br(setting('company.address')) !!}</strong><br><br>
 
-                @if (setting('company.tax_number'))
-                    <strong class="text-white">
+                <strong class="text-white">
+                    @if (setting('company.tax_number'))
                         {{ trans('general.tax_number') }}: {{ setting('company.tax_number') }}
-                    </strong><br><br>
-                @endif
+                    @endif
+                </strong><br><br>
 
-                @if (setting('company.phone'))
-                    <strong class="text-white">
+                <strong class="text-white">
+                    @if (setting('company.phone'))
                         {{ setting('company.phone') }}
-                    </strong><br><br>
-                @endif
+                    @endif
+                </strong><br><br>
 
                 <strong class="text-white">{{ setting('company.email') }}</strong><br><br>
             </div>
@@ -33,7 +35,7 @@
 
     <div class="row mt-2">
         <div class="col-58">
-            <div class="text company pl-2">
+            <div class="text company">
                 <strong>{{ trans('invoices.bill_to') }}</strong><br>
                 @stack('name_input_start')
                     <strong>{{ $invoice->contact_name }}</strong><br><br>
@@ -159,9 +161,11 @@
     </div>
 
     @if ($invoice->footer)
-        <div class="row footer">
-            <div class="col-100 py-2">
-                <div class="text pr-2">{!! nl2br($invoice->footer) !!}</div>
+        <div class="row mt-7">
+            <div class="col-100 py-2" style="background-color:{{ setting('invoice.color') }} !important; -webkit-print-color-adjust: exact;">
+                <div class="text pl-2">
+                    <strong class="text-white">{!! nl2br($invoice->footer) !!}</strong>
+                </div>
             </div>
         </div>
     @endif

@@ -64,6 +64,7 @@
                                         <a class="btn btn-neutral btn-sm text-light items-align-center py-2" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                             <i class="fa fa-ellipsis-h text-muted"></i>
                                         </a>
+
                                         <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
                                             <a class="dropdown-item" href="{{ route('bills.show', $item->id) }}">{{ trans('general.show') }}</a>
                                             @if (!$item->reconciled)

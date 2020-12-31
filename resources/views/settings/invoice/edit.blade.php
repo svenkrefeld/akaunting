@@ -85,7 +85,8 @@
                 </button>
 
                 <button :disabled="form.loading"  type="button" class="btn btn-success button-submit" @click="addTemplate">
-                    <div class="aka-loader"></div><span>{{ trans('general.confirm') }}</span>
+                    <span v-if="form.loading" class="btn-inner--icon"><i class="aka-loader"></i></span>
+                    <span :class="[{'ml-0': form.loading}]" class="btn-inner--text">{{ trans('general.confirm') }}</span>
                 </button>
             </div>
         </template>
