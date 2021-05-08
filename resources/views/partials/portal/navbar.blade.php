@@ -28,6 +28,8 @@
                         @endif
 
                         <div class="list-group list-group-flush">
+                            @stack('notification_bills_start')
+
                             @if (count($bills))
                                 <a href="{{ route('users.read.bills', $user->id) }}" class="list-group-item list-group-item-action">
                                     <div class="row align-items-center">
@@ -43,6 +45,10 @@
                                 </a>
                             @endif
 
+                            @stack('notification_bills_end')
+
+                            @stack('notification_invoices_start')
+
                             @if (count($invoices))
                                 <a href="{{ route('users.read.invoices', $user->id) }}" class="list-group-item list-group-item-action">
                                     <div class="row align-items-center">
@@ -57,6 +63,8 @@
                                     </div>
                                 </a>
                             @endif
+
+                            @stack('notification_invoices_end')
                         </div>
 
                         @if ($notifications)
@@ -67,7 +75,7 @@
                     </div>
                 </li>
 
-                @permission('read-install-updates')
+                @can('read-install-updates')
                     <li class="nav-item">
                         <a class="nav-link" href="{{ route('updates.index') }}" title="{{ $updates }} Updates Available" role="button" aria-haspopup="true" aria-expanded="false">
                             <span>
@@ -78,7 +86,7 @@
                             @endif
                         </a>
                     </li>
-                @endpermission
+                @endcan
 
                 <li class="nav-item d-none d-md-block">
                     <a class="nav-link" href="{{ url(trans('header.support_link')) }}" target="_blank" title="{{ trans('general.help') }}" role="button" aria-haspopup="true" aria-expanded="false">

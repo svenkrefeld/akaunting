@@ -7,7 +7,6 @@ use App\Http\Requests\Common\Dashboard as Request;
 use App\Jobs\Common\CreateDashboard;
 use App\Jobs\Common\DeleteDashboard;
 use App\Jobs\Common\UpdateDashboard;
-use App\Models\Common\Company;
 use App\Models\Common\Dashboard;
 use App\Models\Common\Widget;
 use App\Traits\DateTime;
@@ -40,7 +39,7 @@ class Dashboards extends Controller
     {
         $dashboards = user()->dashboards()->collect();
 
-        return view('common.dashboards.index', compact('dashboards'));
+        return $this->response('common.dashboards.index', compact('dashboards'));
     }
 
     /**
@@ -60,9 +59,9 @@ class Dashboards extends Controller
 
         if (empty($dashboard)) {
             $dashboard = $this->dispatch(new CreateDashboard([
-                'company_id' => session('company_id'),
+                'company_id' => company_id(),
                 'name' => trans_choice('general.dashboards', 1),
-                'with_widgets' => true,
+                'default_widgets' => 'core',
             ]));
         }
 
@@ -72,9 +71,14 @@ class Dashboards extends Controller
             return Widgets::canShow($widget->class);
         });
 
-        $financial_start = $this->getFinancialStart()->format('Y-m-d');
+        $date_picker_shortcuts = $this->getDatePickerShortcuts();
 
-        return view('common.dashboards.show', compact('dashboard', 'widgets', 'financial_start'));
+        if (!request()->has('start_date')) {
+            request()->merge(['start_date' => $date_picker_shortcuts[trans('reports.this_year')]['start']]);
+            request()->merge(['end_date' => $date_picker_shortcuts[trans('reports.this_year')]['end']]);
+        }
+
+        return view('common.dashboards.show', compact('dashboard', 'widgets', 'date_picker_shortcuts'));
     }
 
     /**
@@ -84,7 +88,7 @@ class Dashboards extends Controller
      */
     public function create()
     {
-        $users = Company::find(session('company_id'))->users()->get()->sortBy('name');
+        $users = company()->users()->get()->sortBy('name');
 
         return view('common.dashboards.create', compact('users'));
     }
@@ -110,7 +114,7 @@ class Dashboards extends Controller
 
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);
@@ -125,11 +129,11 @@ class Dashboards extends Controller
      */
     public function edit(Dashboard $dashboard)
     {
-        if (!$this->isUserDashboard($dashboard->id)) {
+        if ($this->isNotUserDashboard($dashboard->id)) {
             return redirect()->route('dashboards.index');
         }
 
-        $users = Company::find(session('company_id'))->users()->get()->sortBy('name');
+        $users = company()->users()->get()->sortBy('name');
 
         return view('common.dashboards.edit', compact('dashboard', 'users'));
     }
@@ -156,7 +160,7 @@ class Dashboards extends Controller
 
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);
@@ -220,7 +224,7 @@ class Dashboards extends Controller
         } else {
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);

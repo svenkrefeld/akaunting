@@ -31,6 +31,8 @@ class Suggestions
             return;
         }
 
+        $path = str_replace('{company_id}/', '', $path);
+
         if (!$suggestions = $this->getSuggestions($path)) {
             return;
         }
@@ -41,6 +43,8 @@ class Suggestions
             if ($this->moduleIsEnabled($s_module->alias)) {
                 continue;
             }
+
+            $s_module->action_url = company_id() . '/' . $s_module->action_url;
 
             $modules[] = $s_module;
         }

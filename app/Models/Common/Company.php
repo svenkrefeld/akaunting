@@ -2,10 +2,16 @@
 
 namespace App\Models\Common;
 
+use App\Events\Common\CompanyForgettingCurrent;
+use App\Events\Common\CompanyForgotCurrent;
+use App\Events\Common\CompanyMadeCurrent;
+use App\Events\Common\CompanyMakingCurrent;
+use App\Models\Document\Document;
 use App\Traits\Contacts;
 use App\Traits\Media;
 use App\Traits\Tenants;
 use App\Traits\Transactions;
+use App\Utilities\Overrider;
 use Illuminate\Database\Eloquent\Model as Eloquent;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Kyslik\ColumnSortable\Sortable;
@@ -27,12 +33,41 @@ class Company extends Eloquent
         'enabled' => 'boolean',
     ];
 
+    public $allAttributes = [];
+
     /**
      * Sortable columns.
      *
      * @var array
      */
     public $sortable = ['name', 'domain', 'email', 'enabled', 'created_at'];
+
+    /**
+     * Create a new Eloquent model instance.
+     *
+     * @param  array  $attributes
+     * @return void
+     */
+    public function __construct(array $attributes = [])
+    {
+        $this->allAttributes = $attributes;
+
+        parent::__construct($attributes);
+    }
+
+    /**
+     * Update the model in the database.
+     *
+     * @param  array  $attributes
+     * @param  array  $options
+     * @return bool
+     */
+    public function update(array $attributes = [], array $options = [])
+    {
+        $this->allAttributes = $attributes;
+
+        return parent::update($attributes, $options);
+    }
 
     public static function boot()
     {
@@ -47,6 +82,31 @@ class Company extends Eloquent
         });
     }
 
+    public function documents()
+    {
+        return $this->hasMany('App\Models\Document\Document');
+    }
+
+    public function document_histories()
+    {
+        return $this->hasMany('App\Models\Document\DocumentHistory');
+    }
+
+    public function document_items()
+    {
+        return $this->hasMany('App\Models\Document\DocumentItem');
+    }
+
+    public function document_item_taxes()
+    {
+        return $this->hasMany('App\Models\Document\DocumentItemTax');
+    }
+
+    public function document_totals()
+    {
+        return $this->hasMany('App\Models\Document\DocumentTotal');
+    }
+
     public function accounts()
     {
         return $this->hasMany('App\Models\Banking\Account');
@@ -54,27 +114,27 @@ class Company extends Eloquent
 
     public function bills()
     {
-        return $this->hasMany('App\Models\Purchase\Bill');
+        return $this->documents()->where('type', Document::BILL_TYPE);
     }
 
     public function bill_histories()
     {
-        return $this->hasMany('App\Models\Purchase\BillHistory');
+        return $this->document_histories()->where('type', Document::BILL_TYPE);
     }
 
     public function bill_items()
     {
-        return $this->hasMany('App\Models\Purchase\BillItem');
+        return $this->document_items()->where('type', Document::BILL_TYPE);
     }
 
     public function bill_item_taxes()
     {
-        return $this->hasMany('App\Models\Purchase\BillItemTax');
+        return $this->document_item_taxes()->where('type', Document::BILL_TYPE);
     }
 
     public function bill_totals()
     {
-        return $this->hasMany('App\Models\Purchase\BillTotal');
+        return $this->document_totals()->where('type', Document::BILL_TYPE);
     }
 
     public function categories()
@@ -119,27 +179,27 @@ class Company extends Eloquent
 
     public function invoices()
     {
-        return $this->hasMany('App\Models\Sale\Invoice');
+        return $this->documents()->where('type', Document::INVOICE_TYPE);
     }
 
     public function invoice_histories()
     {
-        return $this->hasMany('App\Models\Sale\InvoiceHistory');
+        return $this->document_histories()->where('type', Document::INVOICE_TYPE);
     }
 
     public function invoice_items()
     {
-        return $this->hasMany('App\Models\Sale\InvoiceItem');
+        return $this->document_items()->where('type', Document::INVOICE_TYPE);
     }
 
     public function invoice_item_taxes()
     {
-        return $this->hasMany('App\Models\Sale\InvoiceItemTax');
+        return $this->document_item_taxes()->where('type', Document::INVOICE_TYPE);
     }
 
     public function invoice_totals()
     {
-        return $this->hasMany('App\Models\Sale\InvoiceTotal');
+        return $this->document_totals()->where('type', Document::INVOICE_TYPE);
     }
 
     public function items()
@@ -275,9 +335,16 @@ class Company extends Eloquent
         $request = request();
 
         $search = $request->get('search');
+
+        $query->usingSearchString($search)->sortable($sort);
+
+        if ($request->expectsJson() && $request->isNotApi()) {
+            return $query->get();
+        }
+
         $limit = $request->get('limit', setting('default.list_limit', '25'));
 
-        return user()->companies()->usingSearchString($search)->sortable($sort)->paginate($limit);
+        return $query->paginate($limit);
     }
 
     /**
@@ -290,6 +357,20 @@ class Company extends Eloquent
     public function scopeEnabled($query, $value = 1)
     {
         return $query->where('enabled', $value);
+    }
+
+    /**
+     * Scope to only include companies of a given user id.
+     *
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @param int $user_id
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeUserId($query, $user_id)
+    {
+        return $query->whereHas('users', function ($query) use ($user_id) {
+            $query->where('user_id', $user_id);
+        });
     }
 
     /**
@@ -358,5 +439,83 @@ class Company extends Eloquent
     public function getCompanyLogoAttribute()
     {
         return $this->getMedia('company_logo')->last();
+    }
+
+    public function makeCurrent($force = false)
+    {
+        if (!$force && $this->isCurrent()) {
+            return $this;
+        }
+
+        static::forgetCurrent();
+
+        event(new CompanyMakingCurrent($this));
+
+        // Bind to container
+        app()->instance(static::class, $this);
+
+        // Set session for backward compatibility @deprecated
+        //session(['company_id' => $this->id]);
+
+        // Load settings
+        setting()->setExtraColumns(['company_id' => $this->id]);
+        setting()->forgetAll();
+        setting()->load(true);
+
+        // Override settings and currencies
+        Overrider::load('settings');
+        Overrider::load('currencies');
+
+        event(new CompanyMadeCurrent($this));
+
+        return $this;
+    }
+
+    public function isCurrent()
+    {
+        return optional(static::getCurrent())->id === $this->id;
+    }
+
+    public function isNotCurrent()
+    {
+        return !$this->isCurrent();
+    }
+
+    public static function getCurrent()
+    {
+        if (!app()->has(static::class)) {
+            return null;
+        }
+
+        return app(static::class);
+    }
+
+    public static function forgetCurrent()
+    {
+        $current = static::getCurrent();
+
+        if (is_null($current)) {
+            return null;
+        }
+
+        event(new CompanyForgettingCurrent($current));
+
+        // Remove from container
+        app()->forgetInstance(static::class);
+
+        // Unset session for backward compatibility @deprecated
+        //session()->forget('company_id');
+
+        // Remove settings
+        setting()->forgetAll();
+
+        event(new CompanyForgotCurrent($current));
+
+        return $current;
+    }
+
+    public static function hasCurrent()
+    {
+        return static::getCurrent() !== null;
     }
 }

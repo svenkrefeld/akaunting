@@ -2,11 +2,23 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Route as Facade;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as Provider;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route as Facade;
 
 class Route extends Provider
 {
+    /**
+     * The path to the "home" route for your application.
+     *
+     * This is used by Laravel authentication to redirect users after login.
+     *
+     * @var string
+     */
+    public const HOME = '/';
+
     /**
      * This namespace is applied to your controller routes.
      *
@@ -15,6 +27,73 @@ class Route extends Provider
      * @var string
      */
     protected $namespace = 'App\Http\Controllers';
+
+    /**
+     * Register any application services.
+     *
+     * @return void
+     */
+    public function register()
+    {
+        parent::register();
+
+        Facade::macro('module', function ($alias, $routes, $attrs) {
+            $attributes = [
+                'middleware' => $attrs['middleware'],
+            ];
+
+            if (isset($attrs['namespace'])) {
+                // null means don't add
+                if (!is_null($attrs['namespace'])) {
+                    $attributes['namespace'] = $attrs['namespace'];
+                }
+            } else {
+                $attributes['namespace'] = 'Modules\\' . module($alias)->getStudlyName() . '\Http\Controllers';
+            }
+
+            if (isset($attrs['prefix'])) {
+                // null means don't add
+                if (!is_null($attrs['prefix'])) {
+                    $attributes['prefix'] = '{company_id}/' . $attrs['prefix'];
+                }
+            } else {
+                $attributes['prefix'] = '{company_id}/' . $alias;
+            }
+
+            if (isset($attrs['as'])) {
+                // null means don't add
+                if (!is_null($attrs['as'])) {
+                    $attributes['as'] = $attrs['as'];
+                }
+            } else {
+                $attributes['as'] = $alias . '.';
+            }
+
+            return Facade::group($attributes, $routes);
+        });
+
+        Facade::macro('admin', function ($alias, $routes, $attributes = []) {
+            return Facade::module($alias, $routes, array_merge([
+                'middleware'    => 'admin',
+            ], $attributes));
+        });
+
+        Facade::macro('portal', function ($alias, $routes, $attributes = []) {
+            return Facade::module($alias, $routes, array_merge([
+                'middleware'    => 'portal',
+                'prefix'        => 'portal/' . $alias,
+                'as'            => 'portal.' . $alias . '.',
+            ], $attributes));
+        });
+
+        Facade::macro('signed', function ($alias, $routes, $attributes = []) {
+            return Facade::module($alias, $routes, array_merge([
+                'middleware'    => 'signed',
+                'prefix'        => 'signed/' . $alias,
+                'as'            => 'signed.' . $alias . '.',
+            ], $attributes));
+        });
+    }
 
     /**
      * Define the routes for the application.
@@ -64,6 +143,8 @@ class Route extends Provider
      */
     protected function mapApiRoutes()
     {
+        $this->configureRateLimiting();
+
         Facade::prefix('api')
             ->namespace($this->namespace)
             ->group(base_path('routes/api.php'));
@@ -78,7 +159,8 @@ class Route extends Provider
      */
     protected function mapCommonRoutes()
     {
-        Facade::middleware('common')
+        Facade::prefix('{company_id}')
+            ->middleware('common')
             ->namespace($this->namespace)
             ->group(base_path('routes/common.php'));
     }
@@ -106,7 +188,7 @@ class Route extends Provider
      */
     protected function mapWizardRoutes()
     {
-        Facade::prefix('wizard')
+        Facade::prefix('{company_id}/wizard')
             ->middleware('wizard')
             ->namespace($this->namespace)
             ->group(base_path('routes/wizard.php'));
@@ -121,7 +203,8 @@ class Route extends Provider
      */
     protected function mapAdminRoutes()
     {
-        Facade::middleware('admin')
+        Facade::prefix('{company_id}')
+            ->middleware('admin')
             ->namespace($this->namespace)
             ->group(base_path('routes/admin.php'));
     }
@@ -135,7 +218,7 @@ class Route extends Provider
      */
     protected function mapPortalRoutes()
     {
-        Facade::prefix('portal')
+        Facade::prefix('{company_id}/portal')
             ->middleware('portal')
             ->namespace($this->namespace)
             ->group(base_path('routes/portal.php'));
@@ -150,9 +233,21 @@ class Route extends Provider
      */
     protected function mapSignedRoutes()
     {
-        Facade::prefix('signed')
+        Facade::prefix('{company_id}/signed')
             ->middleware('signed')
             ->namespace($this->namespace)
             ->group(base_path('routes/signed.php'));
+    }
+
+    /**
+     * Configure the rate limiters for the application.
+     *
+     * @return void
+     */
+    protected function configureRateLimiting()
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60);
+        });
     }
 }

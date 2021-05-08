@@ -30,7 +30,7 @@ class Items extends Controller
      */
     public function create(IRequest $request)
     {
-        $categories = Category::item()->enabled()->orderBy('name')->pluck('name', 'id');
+        $categories = Category::item()->enabled()->orderBy('name')->take(setting('default.select_limit'))->pluck('name', 'id');
 
         $taxes = Tax::enabled()->orderBy('name')->get()->pluck('title', 'id');
 
@@ -56,7 +56,7 @@ class Items extends Controller
     {
         if ($request->get('type', false) == 'inline') {
             $data = [
-                'company_id' => session('company_id'),
+                'company_id' => company_id(),
                 'name' => '',
                 'sale_price' => 0,
                 'purchase_price' => 0,

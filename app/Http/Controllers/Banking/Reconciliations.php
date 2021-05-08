@@ -26,7 +26,7 @@ class Reconciliations extends Controller
 
         $accounts = collect(Account::enabled()->orderBy('name')->pluck('name', 'id'));
 
-        return view('banking.reconciliations.index', compact('reconciliations', 'accounts'));
+        return $this->response('banking.reconciliations.index', compact('reconciliations', 'accounts'));
     }
 
     /**
@@ -85,7 +85,7 @@ class Reconciliations extends Controller
 
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);
@@ -134,7 +134,7 @@ class Reconciliations extends Controller
 
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);
@@ -160,7 +160,7 @@ class Reconciliations extends Controller
         } else {
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);

@@ -4,15 +4,13 @@ namespace App\Console\Commands;
 
 use App\Events\Banking\TransactionCreated;
 use App\Events\Banking\TransactionRecurring;
-use App\Events\Purchase\BillCreated;
-use App\Events\Purchase\BillRecurring;
-use App\Events\Sale\InvoiceCreated;
-use App\Events\Sale\InvoiceRecurring;
+use App\Events\Document\DocumentCreated;
+use App\Events\Document\DocumentRecurring;
 use App\Models\Banking\Transaction;
+use App\Models\Common\Company;
 use App\Models\Common\Recurring;
-use App\Models\Sale\Invoice;
+use App\Models\Document\Document;
 use App\Utilities\Date;
-use App\Utilities\Overrider;
 use Illuminate\Console\Command;
 
 class RecurringCheck extends Command
@@ -85,12 +83,7 @@ class RecurringCheck extends Command
                 continue;
             }
 
-            // Set company id
-            session(['company_id' => $recur->company_id]);
-
-            // Override settings and currencies
-            Overrider::load('settings');
-            Overrider::load('currencies');
+            company($recur->company_id)->makeCurrent();
 
             $today = Date::today();
 
@@ -123,29 +116,22 @@ class RecurringCheck extends Command
             }
         }
 
-        // Unset company_id
-        session()->forget('company_id');
-        setting()->forgetAll();
+        Company::forgetCurrent();
     }
 
     protected function recur($model, $type, $schedule_date)
     {
         \DB::transaction(function () use ($model, $type, $schedule_date) {
+            /** @var Document $clone */
             if (!$clone = $this->getClone($model, $schedule_date)) {
                 return;
             }
 
             switch ($type) {
-                case 'App\Models\Purchase\Bill':
-                    event(new BillCreated($clone));
+                case 'App\Models\Document\Document':
+                    event(new DocumentCreated($clone, request()));
 
-                    event(new BillRecurring($clone));
-
-                    break;
-                case 'App\Models\Sale\Invoice':
-                    event(new InvoiceCreated($clone));
-
-                    event(new InvoiceRecurring($clone));
+                    event(new DocumentRecurring($clone));
 
                     break;
                 case 'App\Models\Banking\Transaction':
@@ -272,11 +258,9 @@ class RecurringCheck extends Command
             return 'paid_at';
         }
 
-        if ($model instanceof Invoice) {
-            return 'invoiced_at';
+        if ($model instanceof Document) {
+            return 'issued_at';
         }
-
-        return 'billed_at';
     }
 
     protected function getTable($model)
@@ -285,10 +269,8 @@ class RecurringCheck extends Command
             return 'transactions';
         }
 
-        if ($model instanceof Invoice) {
-            return 'invoices';
+        if ($model instanceof Document) {
+            return 'documents';
         }
-
-        return 'bills';
     }
 }

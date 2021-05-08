@@ -6,6 +6,8 @@
 
     <title>@yield('title') - @setting('company.name')</title>
 
+    <base href="{{ config('app.url') . '/' }}">
+
     @include('partials.pwa.pwa')
 
     <!-- Favicon -->
@@ -28,8 +30,10 @@
 
     @stack('stylesheet')
 
+    @livewireStyles
+
     <script type="text/javascript"><!--
-        var url = '{{ url("/") }}';
+        var url = '{{ url("/" . company_id()) }}';
         var app_url = '{{ config("app.url") }}';
         var aka_currency = {!! !empty($currency) ? $currency : 'false' !!};
     //--></script>

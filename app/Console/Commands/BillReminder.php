@@ -2,9 +2,10 @@
 
 namespace App\Console\Commands;
 
-use App\Events\Purchase\BillReminded;
+use App\Events\Document\DocumentReminded;
 use App\Models\Common\Company;
-use App\Models\Purchase\Bill;
+use App\Models\Document\Document;
+use App\Notifications\Purchase\Bill as Notification;
 use App\Utilities\Overrider;
 use Date;
 use Illuminate\Console\Command;
@@ -46,12 +47,8 @@ class BillReminder extends Command
 
             $this->info('Sending bill reminders for ' . $company->name . ' company.');
 
-            // Set company id
-            session(['company_id' => $company->id]);
-
-            // Override settings and currencies
-            Overrider::load('settings');
-            Overrider::load('currencies');
+            // Set company
+            $company->makeCurrent();
 
             // Don't send reminders if disabled
             if (!setting('schedule.send_bill_reminder')) {
@@ -69,9 +66,7 @@ class BillReminder extends Command
             }
         }
 
-        // Unset company_id
-        session()->forget('company_id');
-        setting()->forgetAll();
+        Company::forgetCurrent();
     }
 
     protected function remind($day)
@@ -80,11 +75,11 @@ class BillReminder extends Command
         $date = Date::today()->addDays($day)->toDateString();
 
         // Get upcoming bills
-        $bills = Bill::with('contact')->accrued()->notPaid()->due($date)->cursor();
+        $bills = Document::bill()->with('contact')->accrued()->notPaid()->due($date)->cursor();
 
         foreach ($bills as $bill) {
             try {
-                event(new BillReminded($bill));
+                event(new DocumentReminded($bill, Notification::class));
             } catch (\Exception | \Throwable | \Swift_RfcComplianceException | \Illuminate\Database\QueryException $e) {
                 $this->error($e->getMessage());
 

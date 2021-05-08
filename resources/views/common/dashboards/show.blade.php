@@ -3,7 +3,7 @@
 @section('title', $dashboard->name)
 
 @section('dashboard_action')
-    @permission(['create-common-widgets', 'read-common-dashboards'])
+    @canany(['create-common-widgets', 'read-common-dashboards'])
         <span class="dashboard-action">
             <div class="dropdown">
                 <a class="btn btn-sm items-align-center py-2 mt--1" href="#" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -11,25 +11,25 @@
                 </a>
 
                 <div class="dropdown-menu dropdown-menu-sm-right dropdown-menu-xs-right dropdown-menu-arrow">
-                    @permission('create-common-widgets')
+                    @can('create-common-widgets')
                         {!! Form::button(trans('general.title.add', ['type' => trans_choice('general.widgets', 1)]), [
                             'type'    => 'button',
                             'class'   => 'dropdown-item',
                             'title'   => trans('general.title.add', ['type' => trans_choice('general.widgets', 1)]),
                             '@click'  => 'onCreateWidget()',
                         ]) !!}
-                    @endpermission
-                    @permission('update-common-dashboards')
+                    @endcan
+                    @can('update-common-dashboards')
                         <div class="dropdown-divider"></div>
-                        @permission('create-common-dashboards')
+                        @can('create-common-dashboards')
                             <a class="dropdown-item" href="{{ route('dashboards.create') }}">{{ trans('general.title.create', ['type' => trans_choice('general.dashboards', 1)]) }}</a>
-                        @endpermission
+                        @endcan
                         <a class="dropdown-item" href="{{ route('dashboards.index') }}">{{ trans('general.title.manage', ['type' => trans_choice('general.dashboards', 2)]) }}</a>
-                    @endpermission
+                    @endcan
                 </div>
             </div>
         </span>
-    @endpermission
+    @endcanany
 
     @php
         $text = json_encode([
@@ -81,18 +81,15 @@
         value-format="yyyy-MM-dd"
         @change="onChangeFilterDate"
         range-separator=">>"
-        start-placeholder="{{ trans('general.start_date')}}"
-        end-placeholder="{{ trans('general.end_date')}}"
+        start-placeholder="{{ $date_picker_shortcuts[trans("reports.this_year")]["start"] }}"
+        end-placeholder="{{ $date_picker_shortcuts[trans("reports.this_year")]["end"] }}"
         :picker-options="{
             shortcuts: [
                 {
                     text: '{{ trans("reports.this_year") }}',
                     onClick(picker) {
-                        const end = new Date('{{ $financial_start }}');
-                        const start = new Date('{{ $financial_start }}');
-
-                        end.setFullYear(start.getFullYear() + 1);
-                        end.setTime(end.getTime() - 3600 * 1000 * 24 * 1);
+                        const start = new Date('{{ $date_picker_shortcuts[trans("reports.this_year")]["start"] }}');
+                        const end = new Date('{{ $date_picker_shortcuts[trans("reports.this_year")]["end"] }}');
 
                         picker.$emit('pick', [start, end]);
                     }
@@ -100,13 +97,8 @@
                 {
                     text: '{{ trans("reports.previous_year") }}',
                     onClick(picker) {
-                        const end = new Date('{{ $financial_start }}');
-                        const start = new Date('{{ $financial_start }}');
-
-                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 365);
-
-                        end.setFullYear(start.getFullYear() + 1);
-                        end.setTime(end.getTime() - 3600 * 1000 * 24 * 1);
+                        const start = new Date('{{ $date_picker_shortcuts[trans("reports.previous_year")]["start"] }}');
+                        const end = new Date('{{ $date_picker_shortcuts[trans("reports.previous_year")]["end"] }}');
 
                         picker.$emit('pick', [start, end]);
                     }
@@ -114,10 +106,8 @@
                 {
                     text: '{{ trans("reports.this_quarter") }}',
                     onClick(picker) {
-                        const now = new Date();
-                        const quarter = Math.floor((now.getMonth() / 3));
-                        const start = new Date(now.getFullYear(), quarter * 3, 1);
-                        const end = new Date(start.getFullYear(), start.getMonth() + 3, 0);
+                        const start = new Date('{{ $date_picker_shortcuts[trans("reports.this_quarter")]["start"] }}');
+                        const end = new Date('{{ $date_picker_shortcuts[trans("reports.this_quarter")]["end"] }}');
 
                         picker.$emit('pick', [start, end]);
                     }
@@ -125,13 +115,8 @@
                 {
                     text: '{{ trans("reports.previous_quarter") }}',
                     onClick(picker) {
-                        const now = new Date();
-                        const quarter = Math.floor((now.getMonth() / 3));
-                        const start = new Date(now.getFullYear(), quarter * 3, 1);
-                        const end = new Date(start.getFullYear(), start.getMonth() + 3, 0);
-
-                        start.setMonth(start.getMonth() - 3);
-                        end.setMonth(end.getMonth() - 3);
+                        const start = new Date('{{ $date_picker_shortcuts[trans("reports.previous_quarter")]["start"] }}');
+                        const end = new Date('{{ $date_picker_shortcuts[trans("reports.previous_quarter")]["end"] }}');
 
                         picker.$emit('pick', [start, end]);
                     }
@@ -139,10 +124,8 @@
                 {
                     text: '{{ trans("reports.last_12_months") }}',
                     onClick(picker) {
-                        const end = new Date();
-                        const start = new Date();
-
-                        start.setTime(start.getTime() - 3600 * 1000 * 24 * 365);
+                        const start = new Date('{{ $date_picker_shortcuts[trans("reports.last_12_months")]["start"] }}');
+                        const end = new Date('{{ $date_picker_shortcuts[trans("reports.last_12_months")]["end"] }}');
 
                         picker.$emit('pick', [start, end]);
                     }

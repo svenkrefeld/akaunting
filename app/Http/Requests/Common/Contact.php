@@ -23,7 +23,6 @@ class Contact extends FormRequest
      */
     public function rules()
     {
-
         $email = '';
         $required = '';
 
@@ -32,7 +31,9 @@ class Contact extends FormRequest
 
         // Check if store or update
         if ($this->getMethod() == 'PATCH') {
-            $id = is_numeric($this->$type) ? $this->$type : $this->$type->getAttribute('id');
+            $model = $this->isApi() ? 'contact' : $type;
+
+            $id = is_numeric($this->$model) ? $this->$model : $this->$model->getAttribute('id');
         } else {
             $id = null;
         }
@@ -42,7 +43,15 @@ class Contact extends FormRequest
         }
 
         if (!empty($this->request->get('email'))) {
-            $email = 'email|unique:contacts,NULL,' . $id . ',id,company_id,' . $company_id . ',type,' . $type . ',deleted_at,NULL';
+            $email .= 'email|unique:contacts,NULL,'
+                      . $id . ',id'
+                      . ',company_id,' . $company_id
+                      . ',type,' . $type
+                      . ',deleted_at,NULL';
+
+            if (isset($model) && $this->$model->user_id) {
+                $email .= '|unique:users,NULL,' . $this->$model->user_id . ',id,deleted_at,NULL';
+            }
         }
 
         return [

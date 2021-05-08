@@ -31,14 +31,14 @@ class CreateCompany extends Job
      */
     public function handle()
     {
+        $current_company_id = company_id();
+
         event(new CompanyCreating($this->request));
 
         \DB::transaction(function () {
             $this->company = Company::create($this->request->all());
 
-            // Clear settings
-            setting()->setExtraColumns(['company_id' => $this->company->id]);
-            setting()->forgetAll();
+            $this->company->makeCurrent();
 
             $this->callSeeds();
 
@@ -46,6 +46,10 @@ class CreateCompany extends Job
         });
 
         event(new CompanyCreated($this->company));
+
+        if (!empty($current_company_id)) {
+            company($current_company_id)->makeCurrent();
+        }
 
         return $this->company;
     }
@@ -92,6 +96,8 @@ class CreateCompany extends Job
         setting()->set([
             'company.name' => $this->request->get('name'),
             'company.email' => $this->request->get('email'),
+            'company.tax_number' => $this->request->get('tax_number'),
+            'company.phone' => $this->request->get('phone'),
             'company.address' => $this->request->get('address'),
             'default.currency' => $this->request->get('currency'),
             'default.locale' => $this->request->get('locale', 'en-GB'),
@@ -104,6 +110,5 @@ class CreateCompany extends Job
         }
 
         setting()->save();
-        setting()->forgetAll();
     }
 }

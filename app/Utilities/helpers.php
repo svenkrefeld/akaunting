@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Common\Company;
 use App\Traits\DateTime;
 use App\Utilities\Date;
 use App\Utilities\Widgets;
@@ -13,13 +14,29 @@ if (!function_exists('user')) {
     function user()
     {
         // Get user from api/web
-        if (request()->is('api/*')) {
+        if (request()->isApi()) {
             $user = app('Dingo\Api\Auth\Auth')->user();
         } else {
             $user = auth()->user();
         }
 
         return $user;
+    }
+}
+
+if (!function_exists('company_date_format')) {
+    /**
+     * Format the given date based on company settings.
+     *
+     * @return string
+     */
+    function company_date_format()
+    {
+        $date_time = new class() {
+            use DateTime;
+        };
+
+        return $date_time->getCompanyDateFormat();
     }
 }
 
@@ -31,11 +48,7 @@ if (!function_exists('company_date')) {
      */
     function company_date($date)
     {
-        $date_time = new class() {
-            use DateTime;
-        };
-
-        return Date::parse($date)->format($date_time->getCompanyDateFormat());
+        return Date::parse($date)->format(company_date_format());
     }
 }
 
@@ -55,6 +68,53 @@ if (!function_exists('show_widget')) {
     }
 }
 
+if (!function_exists('company')) {
+    /**
+     * Get current/any company model.
+     *
+     * @param int|null $id
+     *
+     * @return Company|null
+     */
+    function company($id = null)
+    {
+        $company = null;
+
+        if (is_null($id)) {
+            $company = Company::getCurrent();
+        }
+
+        if (is_numeric($id)) {
+            $company = Company::find($id);
+        }
+
+        return $company;
+    }
+}
+
+if (!function_exists('company_id')) {
+    /**
+     * Get id of current company.
+     *
+     * @return int
+     */
+    function company_id()
+    {
+        return optional(company())->id;
+    }
+}
+
+if (!function_exists('should_queue')) {
+    /**
+     * Check if queue is enabled.
+     *
+     * @return bool
+     */
+    function should_queue() {
+        return config('queue.default') != 'sync';
+    }
+}
+
 if (!function_exists('cache_prefix')) {
     /**
      * Cache system added company_id prefix.
@@ -62,6 +122,6 @@ if (!function_exists('cache_prefix')) {
      * @return string
      */
     function cache_prefix() {
-        return session('company_id') . '_';
+        return company_id() . '_';
     }
 }

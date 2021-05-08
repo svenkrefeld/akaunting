@@ -27,6 +27,8 @@ class Notifications
             return;
         }
 
+        $path = str_replace('{company_id}/', '', $path);
+
         if (!$notifications = $this->getNotifications($path)) {
             return;
         }
@@ -38,6 +40,7 @@ class Notifications
             $message = str_replace('#path#', $path, $notification->message);
             $message = str_replace('#token#', csrf_token(), $message);
             $message = str_replace('#url#', route('dashboard'), $message);
+            $message = str_replace('#company_id#', company_id(), $message);
 
             if (!setting('notifications.' . $notification->path . '.' . $notification->id . '.status', 1)) {
                 continue;

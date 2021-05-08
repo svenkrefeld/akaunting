@@ -6,6 +6,7 @@ use App\Abstracts\Job;
 use App\Models\Auth\Role;
 use App\Models\Auth\User;
 use App\Models\Common\Contact;
+use Illuminate\Support\Str;
 
 class UpdateContact extends Job
 {
@@ -37,6 +38,15 @@ class UpdateContact extends Job
         \DB::transaction(function () {
             if ($this->request->get('create_user', 'false') === 'true') {
                 $this->createUser();
+            } elseif ($this->contact->user) {
+                $this->contact->user->update($this->request->all());
+            }
+
+            // Upload logo
+            if ($this->request->file('logo')) {
+                $media = $this->getMedia($this->request->file('logo'), Str::plural($this->contact->type));
+
+                $this->contact->attachMedia($media, 'logo');
             }
 
             $this->contact->update($this->request->all());
@@ -77,7 +87,7 @@ class UpdateContact extends Job
 
         $user = User::create($data);
         $user->roles()->attach($customer_role);
-        $user->companies()->attach(session('company_id'));
+        $user->companies()->attach($data['company_id']);
 
         $this->request['user_id'] = $user->id;
     }

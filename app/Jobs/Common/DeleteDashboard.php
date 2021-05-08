@@ -33,6 +33,8 @@ class DeleteDashboard extends Job
         \DB::transaction(function () {
             $this->deleteRelationships($this->dashboard, ['widgets']);
 
+            $this->dashboard->users()->detach();
+
             $this->dashboard->delete();
         });
 
@@ -58,7 +60,7 @@ class DeleteDashboard extends Job
         }
 
         // Check if user can access dashboard
-        if (!$this->isUserDashboard($this->dashboard->id)) {
+        if ($this->isNotUserDashboard($this->dashboard->id)) {
             $message = trans('dashboards.error.not_user_dashboard');
 
             throw new \Exception($message);

@@ -3,15 +3,15 @@
 @section('title', trans_choice('general.items', 2))
 
 @section('new_button')
-    @permission('create-common-items')
-        <span><a href="{{ route('items.create') }}" class="btn btn-success btn-sm header-button-top"><span class="fa fa-plus"></span> &nbsp;{{ trans('general.add_new') }}</a></span>
-        <span><a href="{{ route('import.create', ['common', 'items']) }}" class="btn btn-white btn-sm header-button-top"><span class="fa fa-upload "></span> &nbsp;{{ trans('import.import') }}</a></span>
-    @endpermission
-    <span><a href="{{ route('items.export', request()->input()) }}" class="btn btn-white btn-sm header-button-top"><span class="fa fa-download"></span> &nbsp;{{ trans('general.export') }}</a></span>
+    @can('create-common-items')
+        <a href="{{ route('items.create') }}" class="btn btn-success btn-sm">{{ trans('general.add_new') }}</a>
+        <a href="{{ route('import.create', ['common', 'items']) }}" class="btn btn-white btn-sm">{{ trans('import.import') }}</a>
+    @endcan
+    <a href="{{ route('items.export', request()->input()) }}" class="btn btn-white btn-sm">{{ trans('general.export') }}</a>
 @endsection
 
 @section('content')
-    @if ($items->count())
+    @if ($items->count() || request()->get('search', false))
         <div class="card">
             <div class="card-header border-bottom-0" :class="[{'bg-gradient-primary': bulk_action.show}]">
                 {!! Form::open([
@@ -21,10 +21,7 @@
                     'class' => 'mb-0'
                 ]) !!}
                     <div class="align-items-center" v-if="!bulk_action.show">
-                        <akaunting-search
-                            :placeholder="'{{ trans('general.search_placeholder') }}'"
-                            :options="{{ json_encode([]) }}"
-                        ></akaunting-search>
+                        <x-search-string model="App\Models\Common\Item" />
                     </div>
 
                     {{ Form::bulkActionRowGroup('general.items', $bulk_actions, ['group' => 'common', 'type' => 'items']) }}
@@ -55,7 +52,7 @@
                                     <img src="{{ $item->picture ? Storage::url($item->picture->id) : asset('public/img/akaunting-logo-green.svg') }}" class="avatar image-style p-1 mr-3 item-img hidden-md col-aka" alt="{{ $item->name }}">
                                     <a href="{{ route('items.edit', $item->id) }}">{{ $item->name }}</a>
                                 </td>
-                                <td class="col-lg-1 col-xl-2 d-none d-lg-block">
+                                <td class="col-lg-1 col-xl-2 d-none d-lg-block long-texts">
                                     {{ $item->category->name }}
                                 </td>
                                 <td class="col-md-3 col-lg-3 col-xl-2 text-right d-none d-md-block">
@@ -82,14 +79,14 @@
                                         </a>
                                         <div class="dropdown-menu dropdown-menu-right dropdown-menu-arrow">
                                             <a class="dropdown-item" href="{{ route('items.edit', $item->id) }}">{{ trans('general.edit') }}</a>
-                                            @permission('create-common-items')
+                                            @can('create-common-items')
                                                 <div class="dropdown-divider"></div>
                                                 <a class="dropdown-item" href="{{ route('items.duplicate', $item->id) }}">{{ trans('general.duplicate') }}</a>
-                                            @endpermission
-                                            @permission('delete-common-items')
+                                            @endcan
+                                            @can('delete-common-items')
                                                 <div class="dropdown-divider"></div>
                                                 {!! Form::deleteLink($item, 'items.destroy') !!}
-                                            @endpermission
+                                            @endcan
                                         </div>
                                     </div>
                                 </td>
@@ -106,7 +103,7 @@
             </div>
         </div>
     @else
-        @include('partials.admin.empty_page', ['page' => 'items', 'docs_path' => 'items'])
+        <x-empty-page page="items" />
     @endif
 @endsection
 

@@ -6,6 +6,8 @@
 
     <title>@yield('title')</title>
 
+    <base href="{{ config('app.url') . '/' }}">
+
     <!-- Favicon -->
     <link rel="icon" href="{{ asset('public/img/favicon.ico') }}" type="image/png">
 
@@ -26,8 +28,10 @@
 
     @stack('stylesheet')
 
+    @livewireStyles
+
     <script type="text/javascript"><!--
-        var url = '{{ url("/") }}';
+        var url = '{{ url("/" . company_id()) }}';
         var app_url = '{{ config("app.url") }}';
         var aka_currency = {!! !empty($currency) ? $currency : 'false' !!};
     //--></script>

@@ -2,9 +2,9 @@
 
 namespace App\Abstracts\Http;
 
-use App\Events\Sale\PaymentReceived;
+use App\Events\Document\PaymentReceived;
 use App\Http\Requests\Portal\InvoicePayment as PaymentRequest;
-use App\Models\Sale\Invoice;
+use App\Models\Document\Document;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\URL;
 use Monolog\Logger;
@@ -41,7 +41,7 @@ abstract class PaymentController extends BaseController
         });
     }
 
-    public function show(Invoice $invoice, PaymentRequest $request)
+    public function show(Document $invoice, PaymentRequest $request)
     {
         $this->setContactFirstLastName($invoice);
 
@@ -62,18 +62,18 @@ abstract class PaymentController extends BaseController
         ]);
     }
 
-    public function signed(Invoice $invoice, PaymentRequest $request)
+    public function signed(Document $invoice, PaymentRequest $request)
     {
         return $this->show($invoice, $request);
     }
 
-    public function cancel(Invoice $invoice, $force_redirect = false)
+    public function cancel(Document $invoice, $force_redirect = false)
     {
         $message = trans('messages.warning.payment_cancel', ['method' => setting($this->alias . '.name')]);
 
         $this->logger->info($this->module->getName() . ':: Invoice: ' . $invoice->id . ' - Cancel Message: ' . $message);
 
-        flash($message)->warning();
+        flash($message)->warning()->important();
 
         $invoice_url = $this->getInvoiceUrl($invoice);
 
@@ -117,9 +117,9 @@ abstract class PaymentController extends BaseController
 
     public function getInvoiceUrl($invoice)
     {
-        return $this->user
+        return request()->isPortal($invoice->company_id)
                 ? route('portal.invoices.show', $invoice->id)
-                : URL::signedRoute('signed.invoices.show', [$invoice->id, 'company_id' => $invoice->company_id]);
+                : URL::signedRoute('signed.invoices.show', [$invoice->id]);
     }
 
     public function getConfirmUrl($invoice)
@@ -139,14 +139,14 @@ abstract class PaymentController extends BaseController
 
     public function getNotifyUrl($invoice)
     {
-        return route('portal.invoices.' . $this->alias . '.notify', $invoice->id);
+        return route('portal.' . $this->alias . '.invoices.notify', $invoice->id);
     }
 
     public function getModuleUrl($invoice, $suffix)
     {
-        return $this->user
-                ? route('portal.invoices.' . $this->alias . '.' . $suffix, $invoice->id)
-                : URL::signedRoute('signed.invoices.' . $this->alias . '.' . $suffix, [$invoice->id, 'company_id' => $invoice->company_id]);
+        return request()->isPortal($invoice->company_id)
+                ? route('portal.' . $this->alias . '.invoices.' . $suffix, $invoice->id)
+                : URL::signedRoute('signed.' . $this->alias . '.invoices.' . $suffix, [$invoice->id]);
     }
 
     public function getLogger()
@@ -164,6 +164,7 @@ abstract class PaymentController extends BaseController
         $request['amount'] = $invoice->amount;
         $request['payment_method'] = $this->alias;
         $request['reference'] = $this->getReference($invoice);
+        $request['type'] = 'income';
 
         event(new PaymentReceived($invoice, $request));
     }

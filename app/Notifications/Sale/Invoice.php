@@ -3,10 +3,14 @@
 namespace App\Notifications\Sale;
 
 use App\Abstracts\Notification;
+use App\Models\Common\EmailTemplate;
+use App\Traits\Documents;
 use Illuminate\Support\Facades\URL;
 
 class Invoice extends Notification
 {
+    use Documents;
+
     /**
      * The invoice model.
      *
@@ -22,17 +26,26 @@ class Invoice extends Notification
     public $template;
 
     /**
+     * Should attach pdf or not.
+     *
+     * @var bool
+     */
+    public $attach_pdf;
+
+    /**
      * Create a notification instance.
      *
      * @param  object  $invoice
-     * @param  object  $template
+     * @param  object  $template_alias
+     * @param  object  $attach_pdf
      */
-    public function __construct($invoice = null, $template = null)
+    public function __construct($invoice = null, $template_alias = null, $attach_pdf = false)
     {
         parent::__construct();
 
         $this->invoice = $invoice;
-        $this->template = $template;
+        $this->template = EmailTemplate::alias($template_alias)->first();
+        $this->attach_pdf = $attach_pdf;
     }
 
     /**
@@ -45,9 +58,9 @@ class Invoice extends Notification
     {
         $message = $this->initMessage();
 
-        // Attach the PDF file if available
-        if (isset($this->invoice->pdf_path)) {
-            $message->attach($this->invoice->pdf_path, [
+        // Attach the PDF file
+        if ($this->attach_pdf) {
+            $message->attach($this->storeDocumentPdfAndGetPath($this->invoice), [
                 'mime' => 'application/pdf',
             ]);
         }
@@ -74,6 +87,7 @@ class Invoice extends Notification
         return [
             '{invoice_number}',
             '{invoice_total}',
+            '{invoice_amount_due}',
             '{invoice_due_date}',
             '{invoice_guest_link}',
             '{invoice_admin_link}',
@@ -90,10 +104,11 @@ class Invoice extends Notification
     public function getTagsReplacement()
     {
         return [
-            $this->invoice->invoice_number,
+            $this->invoice->document_number,
             money($this->invoice->amount, $this->invoice->currency_code, true),
+            money($this->invoice->amount_due, $this->invoice->currency_code, true),
             company_date($this->invoice->due_at),
-            URL::signedRoute('signed.invoices.show', [$this->invoice->id, 'company_id' => $this->invoice->company_id]),
+            URL::signedRoute('signed.invoices.show', [$this->invoice->id]),
             route('invoices.show', $this->invoice->id),
             route('portal.invoices.show', $this->invoice->id),
             $this->invoice->contact_name,

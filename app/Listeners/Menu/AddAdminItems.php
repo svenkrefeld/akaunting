@@ -29,17 +29,17 @@ class AddAdminItems
                         if (session('dashboard_id') != $dashboard->id) {
                             $sub->route('dashboards.switch', $dashboard->name, ['dashboard' => $dashboard->id], $key, $attr);
                         } else {
-                            $sub->url('/', $dashboard->name, $key, $attr);
+                            $sub->url('/' . company_id(), $dashboard->name, $key, $attr);
                         }
                     }
                 }, 10, [
-                    'url' => '/',
+                    'url' => '/' . company_id(),
                     'title' => trans_choice('general.dashboards', 2),
                     'icon' => 'fa fa-tachometer-alt',
                 ]);
             } else {
                 $menu->add([
-                    'url' => '/',
+                    'url' => '/' . company_id(),
                     'title' => trans_choice('general.dashboards', 1),
                     'icon' => 'fa fa-tachometer-alt',
                     'order' => 10,
@@ -53,7 +53,7 @@ class AddAdminItems
         }
 
         // Sales
-        if ($user->can(['read-sales-invoices', 'read-sales-revenues', 'read-sales-customers'])) {
+        if ($user->canAny(['read-sales-invoices', 'read-sales-revenues', 'read-sales-customers'])) {
             $menu->dropdown(trim(trans_choice('general.sales', 2)), function ($sub) use ($user, $attr) {
                 if ($user->can('read-sales-invoices')) {
                     $sub->route('invoices.index', trans_choice('general.invoices', 2), [], 10, $attr);
@@ -73,7 +73,7 @@ class AddAdminItems
         }
 
         // Purchases
-        if ($user->can(['read-purchases-bills', 'read-purchases-payments', 'read-purchases-vendors'])) {
+        if ($user->canAny(['read-purchases-bills', 'read-purchases-payments', 'read-purchases-vendors'])) {
             $menu->dropdown(trim(trans_choice('general.purchases', 2)), function ($sub) use ($user, $attr) {
                 if ($user->can('read-purchases-bills')) {
                     $sub->route('bills.index', trans_choice('general.bills', 2), [], 10, $attr);
@@ -93,7 +93,7 @@ class AddAdminItems
         }
 
         // Banking
-        if ($user->can(['read-banking-accounts', 'read-banking-transfers', 'read-banking-transactions', 'read-banking-reconciliations'])) {
+        if ($user->canAny(['read-banking-accounts', 'read-banking-transfers', 'read-banking-transactions', 'read-banking-reconciliations'])) {
             $menu->dropdown(trim(trans('general.banking')), function ($sub) use ($user, $attr) {
                 if ($user->can('read-banking-accounts')) {
                     $sub->route('accounts.index', trans_choice('general.accounts', 2), [], 10, $attr);

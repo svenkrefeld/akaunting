@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Common;
 
 use App\Abstracts\Http\Controller;
+use Illuminate\Http\Request;
 
 class Import extends Controller
 {
@@ -13,9 +14,9 @@ class Import extends Controller
      * @param  $type
      * @return Response
      */
-    public function create($group, $type)
+    public function create($group, $type, $route = null)
     {
-        $path = $group . '/' . $type;
+        $path = company_id() . '/' . $group . '/' . $type;
 
         if (module($group) instanceof \Akaunting\Module\Module) {
             $namespace = $group . '::';
@@ -23,6 +24,6 @@ class Import extends Controller
             $namespace = '';
         }
 
-        return view('common.import.create', compact('group', 'type', 'path', 'namespace'));
+        return view('common.import.create', compact('group', 'type', 'path', 'route', 'namespace'));
     }
 }

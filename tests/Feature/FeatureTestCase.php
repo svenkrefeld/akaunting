@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Auth\User;
 use App\Models\Common\Company;
-use Faker\Factory;
+use Faker\Factory as Faker;
 use Tests\TestCase;
 
 abstract class FeatureTestCase extends TestCase
@@ -21,20 +21,9 @@ abstract class FeatureTestCase extends TestCase
 
         $this->withoutExceptionHandling();
 
-        $this->faker = Factory::create();
+        $this->faker = Faker::create();
         $this->user = User::first();
         $this->company = $this->user->companies()->first();
-
-        session(['company_id' => $this->company->id]);
-
-        // Set Company settings
-        setting()->setExtraColumns(['company_id' => $this->company->id]);
-        setting()->forgetAll();
-        setting()->load(true);
-
-        setting()->set(['email.protocol' => 'array']);
-        setting()->save();
-
 
         // Disable debugbar
         config(['debugbar.enabled', false]);
@@ -53,13 +42,13 @@ abstract class FeatureTestCase extends TestCase
             $user = $this->user;
         }
 
-        if (!$company) {
-            $company = $this->company;
+        if ($company) {
+            $company->makeCurrent();
         }
 
-        $this->startSession();
+        app('url')->defaults(['company_id' => company_id()]);
 
-        return $this->actingAs($user)->withSession(['company_id' => $company->id]);
+        return $this->actingAs($user);
     }
 
     public function assertFlashLevel($excepted)

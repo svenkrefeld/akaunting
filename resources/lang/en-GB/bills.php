@@ -38,26 +38,13 @@ return [
     'receive_bill'          => 'Receive Bill',
     'make_payment'          => 'Make Payment',
 
-    'statuses' => [
-        'draft'             => 'Draft',
-        'received'          => 'Received',
-        'partial'           => 'Partial',
-        'paid'              => 'Paid',
-        'overdue'           => 'Overdue',
-        'unpaid'            => 'Unpaid',
-        'cancelled'         => 'Cancelled',
-    ],
-
     'messages' => [
-        'marked_received'   => 'Bill marked as received!',
-        'marked_paid'       => 'Bill marked as paid!',
-        'marked_cancelled'  => 'Bill marked as cancelled!',
         'draft'             => 'This is a <b>DRAFT</b> bill and will be reflected to charts after it gets received.',
 
         'status' => [
             'created'       => 'Created on :date',
             'receive' => [
-                'draft'     => 'Not sent',
+                'draft'     => 'Not received',
                 'received'  => 'Received on :date',
             ],
             'paid' => [

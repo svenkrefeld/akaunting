@@ -22,7 +22,7 @@ class Transactions extends Controller
     {
         $accounts = Account::enabled()->orderBy('name')->pluck('name', 'id');
 
-        $types = collect(['expense' => 'Expense', 'income' => 'Income'])
+        $types = collect(['expense' => trans_choice('general.expenses', 1), 'income' => trans_choice('general.incomes', 1)])
             ->prepend(trans('general.all_type', ['type' => trans_choice('general.types', 2)]), '');
 
         $request_type = !request()->has('type') ? ['income', 'expense'] : request('type');
@@ -30,7 +30,7 @@ class Transactions extends Controller
 
         $transactions = Transaction::with('account', 'category', 'contact')->collect(['paid_at'=> 'desc']);
 
-        return view('banking.transactions.index', compact('transactions', 'accounts', 'types', 'categories'));
+        return $this->response('banking.transactions.index', compact('transactions', 'accounts', 'types', 'categories'));
     }
 
     /**
@@ -42,13 +42,19 @@ class Transactions extends Controller
      */
     public function import(ImportRequest $request)
     {
-        \Excel::import(new Import(), $request->file('import'));
+        $response = $this->importExcel(new Import, $request, trans_choice('general.transactions', 2));
 
-        $message = trans('messages.success.imported', ['type' => trans_choice('general.transactions', 2)]);
+        if ($response['success']) {
+            $response['redirect'] = route('transactions.index');
 
-        flash($message)->success();
+            flash($response['message'])->success();
+        } else {
+            $response['redirect'] = route('import.create', ['banking', 'transactions']);
 
-        return redirect()->route('transactions.index');
+            flash($response['message'])->error()->important();
+        }
+
+        return response()->json($response);
     }
 
     /**
@@ -71,7 +77,7 @@ class Transactions extends Controller
         } else {
             $message = $response['message'];
 
-            flash($message)->error();
+            flash($message)->error()->important();
         }
 
         return response()->json($response);
@@ -84,6 +90,6 @@ class Transactions extends Controller
      */
     public function export()
     {
-        return \Excel::download(new Export(), \Str::filename(trans_choice('general.transactions', 2)) . '.xlsx');
+        return $this->exportExcel(new Export, trans_choice('general.transactions', 2));
     }
 }
